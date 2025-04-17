@@ -1,0 +1,44 @@
+/* Style for the whole scene */
+.root {
+    -fx-background-color: #f4f4f4;
+}
+
+/* Style for labels */
+.label {
+    -fx-font-size: 14px;
+    -fx-text-fill: #333;
+}
+
+/* Style for text fields */
+.text-field, .password-field {
+    -fx-font-size: 14px;
+    -fx-pref-width: 200px;
+    -fx-border-color: #888;
+    -fx-border-radius: 5px;
+    -fx-padding: 5px;
+}
+
+/* Style for button */
+.button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+    -fx-font-size: 14px;
+    -fx-padding: 8px 16px;
+    -fx-border-radius: 5px;
+}
+
+.button:hover {
+    -fx-background-color: #45a049;
+}
+
+GridPane {
+    -fx-padding: 20;
+    -fx-hgap: 10;
+    -fx-vgap: 10;
+}
+
+Button {
+    -fx-background-color: #4CAF50;
+    -fx-text-fill: white;
+}
+
