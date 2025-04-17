@@ -38,4 +38,34 @@ public class UserDAO {
         }
         return null; // User not found
     }
+
+    public User createUser(User user) throws SQLException {
+        System.out.println("Creating new user: " + user.getUsername());
+
+        // First check if the username already exists
+        if (getUserByUsername(user.getUsername()) != null) {
+            throw new SQLException("Username already exists");
+        }
+
+        String sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS)) {
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getRole());
+
+            int rowsInserted = statement.executeUpdate();
+            System.out.println("User creation result: " + (rowsInserted > 0 ? "Success" : "Failed"));
+
+            if (rowsInserted > 0) {
+                // Get the generated ID
+                ResultSet generatedKeys = statement.getGeneratedKeys();
+                if (generatedKeys.next()) {
+                    int id = generatedKeys.getInt(1);
+                    return new User(id, user.getUsername(), user.getPassword(), user.getRole());
+                }
+            }
+            return null;
+        }
+    }
+
 }
