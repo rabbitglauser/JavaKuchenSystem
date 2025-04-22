@@ -1,4 +1,4 @@
-package com.tieinternational;
+package com.tieinternational.request;
 
 import java.io.Serializable;
 

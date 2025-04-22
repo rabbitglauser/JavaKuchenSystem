@@ -2,7 +2,7 @@ package com.tie_international.Handlers;
 
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
-import com.tie_international.DBConnection;
+import com.tie_international.server.DBConnection;
 
 import java.io.IOException;
 import java.io.OutputStream;

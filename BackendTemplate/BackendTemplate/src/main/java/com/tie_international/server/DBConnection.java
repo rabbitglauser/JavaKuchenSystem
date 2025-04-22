@@ -1,4 +1,4 @@
-package com.tie_international;
+package com.tie_international.server;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;

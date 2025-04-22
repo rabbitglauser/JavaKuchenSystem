@@ -53,6 +53,9 @@ public class CakeDAO implements DAO<Cake> {
 
     @Override
     public void save(Cake cake) throws SQLException {
+        if (isCakeNameTaken(cake.getName())) {
+            throw new IllegalArgumentException("A cake with this name already exists.");
+        }
         String query = "INSERT INTO kuchen (Kuchen, Beschreibung, DauerInMinuten) VALUES (?, ?, ?)";
         try (PreparedStatement stmt = connection.prepareStatement(query, Statement.RETURN_GENERATED_KEYS)) {
             stmt.setString(1, cake.getName());
@@ -68,7 +71,17 @@ public class CakeDAO implements DAO<Cake> {
 
     @Override
     public void update(Cake cake) throws SQLException {
-        String query = "UPDATE kuchen SET Kuchen = ?, Beschreibung = ?, DauerInMinuten = ? WHERE ID_Kuchen = ?";
+        String query = "SELECT ID_Kuchen FROM kuchen WHERE LOWER(Kuchen) = LOWER(?) AND ID_Kuchen != ?";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, cake.getName());
+            stmt.setInt(2, cake.getId());
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                throw new IllegalArgumentException("A cake with this name already exists.");
+            }
+        }
+
+        query = "UPDATE kuchen SET Kuchen = ?, Beschreibung = ?, DauerInMinuten = ? WHERE ID_Kuchen = ?";
         try (PreparedStatement stmt = connection.prepareStatement(query)) {
             stmt.setString(1, cake.getName());
             stmt.setString(2, cake.getDescription());
@@ -85,5 +98,17 @@ public class CakeDAO implements DAO<Cake> {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         }
+    }
+
+    public boolean isCakeNameTaken(String name) throws SQLException {
+        String query = "SELECT COUNT(*) FROM kuchen WHERE LOWER(Kuchen) = LOWER(?)";
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, name);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt(1) > 0;
+            }
+        }
+        return false;
     }
 }
