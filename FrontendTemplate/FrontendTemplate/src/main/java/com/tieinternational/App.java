@@ -218,6 +218,36 @@ public class App extends Application {
         TextField cakeDurationField = new TextField();
         cakeDurationField.setPromptText("Duration (in minutes)");
 
+        // Table for listing cakes
+        TableView<Cake> cakeTable = new TableView<>();
+        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        TableColumn<Cake, String> nameColumn = new TableColumn<>("Cake Name");
+        nameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+
+        TableColumn<Cake, String> descriptionColumn = new TableColumn<>("Description");
+        descriptionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+
+        TableColumn<Cake, String> durationColumn = new TableColumn<>("Duration (mins)");
+        durationColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getDurationInMinutes())));
+
+        cakeTable.getColumns().addAll(nameColumn, descriptionColumn, durationColumn);
+
+        // Load cakes into the table
+        try {
+            loadCakesIntoTable(cakeTable);
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Could not load existing cakes.");
+            alert.show();
+        }
+
+        // Add the table to a ScrollPane
+        ScrollPane scrollPane = new ScrollPane(cakeTable);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setPrefHeight(200); // Set preferred height for scroll pane
+
         Button createCakeButton = new Button("Create Cake");
         createCakeButton.setOnAction(event -> {
             String name = cakeNameField.getText();
@@ -278,11 +308,14 @@ public class App extends Application {
                     cakeDescriptionField.clear();
                     cakeDurationField.clear();
 
-                    // Refresh the cake list
+                    // Refresh the cake table (instead of rebuilding the entire layout)
                     try {
-                        refreshCakeList(layout);
-                    } catch (IOException ex) {
+                        loadCakesIntoTable(cakeTable);
+                    } catch (IOException | InterruptedException ex) {
                         ex.printStackTrace();
+                        Alert errorAlert = new Alert(Alert.AlertType.ERROR,
+                                "Failed to refresh cake list: " + ex.getMessage());
+                        errorAlert.show();
                     }
                 });
 
@@ -304,48 +337,30 @@ public class App extends Application {
             }
         });
 
-        layout.getChildren().addAll(cakeNameField, cakeDescriptionField, cakeDurationField, createCakeButton);
-
-        // Table for listing cakes
-        TableView<Cake> cakeTable = new TableView<>();
-        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
-
-        // Add import at the top of the file:
-        // import javafx.beans.property.SimpleStringProperty;
-
-        TableColumn<Cake, String> nameColumn = new TableColumn<>("Cake Name");
-        nameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
-
-        TableColumn<Cake, String> descriptionColumn = new TableColumn<>("Description");
-        descriptionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
-
-        TableColumn<Cake, String> durationColumn = new TableColumn<>("Duration (mins)");
-        durationColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getDurationInMinutes())));
-
-        cakeTable.getColumns().addAll(nameColumn, descriptionColumn, durationColumn);
-
-        // Load cakes into the table
-        try {
-            Cake[] cakes = client.getObject("/cakes", Cake[].class);
-            cakeTable.getItems().addAll(cakes);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Could not load existing cakes.");
-            alert.show();
-        }
-
-        // Add the table to a ScrollPane
-        ScrollPane scrollPane = new ScrollPane(cakeTable);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setFitToHeight(true);
-
-        layout.getChildren().addAll(new Label("Existing Cakes:"), scrollPane);
+        layout.getChildren().addAll(
+                cakeNameField,
+                cakeDescriptionField,
+                cakeDurationField,
+                createCakeButton,
+                new Label("Existing Cakes:"),
+                scrollPane
+        );
 
         // Add a back button
         addBackButton(layout, stage);
 
         Scene manageCakesScene = new Scene(layout, 600, 400);
         stage.setScene(manageCakesScene);
+    }
+
+    // Add this new method to update the table
+    private void loadCakesIntoTable(TableView<Cake> cakeTable) throws IOException, InterruptedException {
+        // Clear existing items
+        cakeTable.getItems().clear();
+
+        // Load cakes into the table
+        Cake[] cakes = client.getObject("/cakes", Cake[].class);
+        cakeTable.getItems().addAll(cakes);
     }
 
     private void refreshCakeList(VBox layout) throws IOException {
