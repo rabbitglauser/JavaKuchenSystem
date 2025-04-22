@@ -40,6 +40,14 @@ public class HttpObjectClient {
         this.httpClient = HttpClient.newHttpClient();
     }
 
+    public <T> T putObject(String path, Object requestObject, Class<T> responseType) throws IOException, InterruptedException {
+        return sendObjectWithHttpClient("PUT", path, requestObject, responseType);
+    }
+
+    public <T> T deleteObject(String path, Class<T> responseType) throws IOException, InterruptedException {
+        return sendObjectWithHttpClient("DELETE", path, null, responseType);
+    }
+
     public <T> T getObject(String path, Class<T> responseType) throws IOException, InterruptedException {
         return sendObjectWithHttpClient("GET", path, null, responseType);
     }

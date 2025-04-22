@@ -277,25 +277,7 @@ public class App extends Application {
                 Task<Cake> createCakeTask = new Task<>() {
                     @Override
                     protected Cake call() throws Exception {
-                        try {
-                            // Use your ErrorResponse class to parse the response
-                            ErrorResponse response = client.postObject("/cakes", newCake, ErrorResponse.class);
-
-                            // If we get here without an exception, it was successful
-                            // The response contains the success message
-                            if (response != null && response.getMessage() != null &&
-                                    response.getMessage().contains("Cake created successfully")) {
-                                // Success case - return the cake we sent
-                                return newCake;
-                            } else {
-                                // Got a response but it's not the expected success message
-                                throw new Exception("Unexpected response from server: " +
-                                        (response != null ? response.getMessage() : "null"));
-                            }
-                        } catch (IOException e) {
-                            // If it's a standard IOException, wrap it with a more descriptive message
-                            throw new Exception("Error communicating with the server: " + e.getMessage(), e);
-                        }
+                        return client.postObject("/cakes", newCake, Cake.class);
                     }
                 };
 
@@ -308,13 +290,12 @@ public class App extends Application {
                     cakeDescriptionField.clear();
                     cakeDurationField.clear();
 
-                    // Refresh the cake table (instead of rebuilding the entire layout)
+                    // Refresh the cake table
                     try {
                         loadCakesIntoTable(cakeTable);
                     } catch (IOException | InterruptedException ex) {
                         ex.printStackTrace();
-                        Alert errorAlert = new Alert(Alert.AlertType.ERROR,
-                                "Failed to refresh cake list: " + ex.getMessage());
+                        Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to refresh cake list.");
                         errorAlert.show();
                     }
                 });
@@ -322,12 +303,10 @@ public class App extends Application {
                 createCakeTask.setOnFailed(e -> {
                     Throwable exception = createCakeTask.getException();
                     exception.printStackTrace();
-                    Alert alert = new Alert(Alert.AlertType.ERROR,
-                            "Failed to create cake: " + exception.getMessage());
+                    Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to create cake: " + exception.getMessage());
                     alert.show();
                 });
 
-                // Start the background task
                 new Thread(createCakeTask).start();
 
             } catch (Exception e) {
@@ -337,11 +316,121 @@ public class App extends Application {
             }
         });
 
+        Button updateCakeButton = new Button("Update Selected Cake");
+        updateCakeButton.setOnAction(event -> {
+            Cake selectedCake = cakeTable.getSelectionModel().getSelectedItem();
+            if (selectedCake == null) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "No cake selected to update.");
+                alert.show();
+                return;
+            }
+
+            String updatedName = cakeNameField.getText().isEmpty() ? selectedCake.getName() : cakeNameField.getText();
+            String updatedDescription = cakeDescriptionField.getText().isEmpty() ? selectedCake.getDescription() : cakeDescriptionField.getText();
+            int updatedDuration;
+
+            try {
+                updatedDuration = cakeDurationField.getText().isEmpty()
+                        ? selectedCake.getDurationInMinutes()
+                        : Integer.parseInt(cakeDurationField.getText());
+            } catch (NumberFormatException e) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Duration must be a number.");
+                alert.show();
+                return;
+            }
+
+            Cake updatedCake = new Cake(updatedName, updatedDescription, updatedDuration);
+
+            Task<Void> updateTask = new Task<>() {
+                @Override
+                protected Void call() throws Exception {
+                    client.putObject("/cakes/" + selectedCake.getId(), updatedCake, Void.class);
+                    return null;
+                }
+            };
+
+            updateTask.setOnSucceeded(e -> {
+                Alert alert = new Alert(Alert.AlertType.INFORMATION, "Cake updated successfully!");
+                alert.show();
+
+                // Refresh the cake table
+                try {
+                    loadCakesIntoTable(cakeTable);
+                } catch (IOException | InterruptedException ex) {
+                    ex.printStackTrace();
+                    Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to refresh cake list.");
+                    errorAlert.show();
+                }
+
+                // Clear input fields
+                cakeNameField.clear();
+                cakeDescriptionField.clear();
+                cakeDurationField.clear();
+            });
+
+            updateTask.setOnFailed(e -> {
+                Throwable exception = updateTask.getException();
+                exception.printStackTrace();
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to update cake: " + exception.getMessage());
+                alert.show();
+            });
+
+            new Thread(updateTask).start();
+        });
+
+        Button deleteCakeButton = new Button("Delete Selected Cake");
+        deleteCakeButton.setOnAction(event -> {
+            Cake selectedCake = cakeTable.getSelectionModel().getSelectedItem();
+            if (selectedCake == null) {
+                Alert alert = new Alert(Alert.AlertType.ERROR, "No cake selected to delete.");
+                alert.show();
+                return;
+            }
+
+            Alert confirmationAlert = new Alert(Alert.AlertType.CONFIRMATION, "Are you sure you want to delete this cake?");
+            confirmationAlert.showAndWait().ifPresent(response -> {
+                if (response == ButtonType.OK) {
+                    Task<Void> deleteTask = new Task<>() {
+                        @Override
+                        protected Void call() throws Exception {
+                            client.deleteObject("/cakes/" + selectedCake.getId(), Void.class);
+                            return null;
+                        }
+                    };
+
+                    deleteTask.setOnSucceeded(e -> {
+                        Alert alert = new Alert(Alert.AlertType.INFORMATION, "Cake deleted successfully!");
+                        alert.show();
+
+                        // Refresh the cake table
+                        try {
+                            loadCakesIntoTable(cakeTable);
+                        } catch (IOException | InterruptedException ex) {
+                            ex.printStackTrace();
+                            Alert errorAlert = new Alert(Alert.AlertType.ERROR, "Failed to refresh cake list.");
+                            errorAlert.show();
+                        }
+                    });
+
+                    deleteTask.setOnFailed(e -> {
+                        Throwable exception = deleteTask.getException();
+                        exception.printStackTrace();
+                        Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to delete cake: " + exception.getMessage());
+                        alert.show();
+                    });
+
+                    new Thread(deleteTask).start();
+                }
+            });
+        });
+
         layout.getChildren().addAll(
                 cakeNameField,
                 cakeDescriptionField,
                 cakeDurationField,
                 createCakeButton,
+                updateCakeButton,
+                deleteCakeButton,
                 new Label("Existing Cakes:"),
                 scrollPane
         );
