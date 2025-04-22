@@ -1,6 +1,7 @@
 package com.tieinternational;
 
 import javafx.application.Application;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.concurrent.Task; // Add this import
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -303,31 +304,47 @@ public class App extends Application {
             }
         });
 
-
         layout.getChildren().addAll(cakeNameField, cakeDescriptionField, cakeDurationField, createCakeButton);
 
-        // List existing cakes
+        // Table for listing cakes
+        TableView<Cake> cakeTable = new TableView<>();
+        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Add import at the top of the file:
+        // import javafx.beans.property.SimpleStringProperty;
+
+        TableColumn<Cake, String> nameColumn = new TableColumn<>("Cake Name");
+        nameColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getName()));
+
+        TableColumn<Cake, String> descriptionColumn = new TableColumn<>("Description");
+        descriptionColumn.setCellValueFactory(cellData -> new SimpleStringProperty(cellData.getValue().getDescription()));
+
+        TableColumn<Cake, String> durationColumn = new TableColumn<>("Duration (mins)");
+        durationColumn.setCellValueFactory(cellData -> new SimpleStringProperty(String.valueOf(cellData.getValue().getDurationInMinutes())));
+
+        cakeTable.getColumns().addAll(nameColumn, descriptionColumn, durationColumn);
+
+        // Load cakes into the table
         try {
-            Label existingCakesLabel = new Label("Existing Cakes:");
-            layout.getChildren().add(existingCakesLabel);
-
             Cake[] cakes = client.getObject("/cakes", Cake[].class);
-
-            for (Cake cake : cakes) {
-                Label cakeLabel = new Label("- " + cake.getName() + ": " + cake.getDescription() + " (" + cake.getDurationInMinutes() + " mins)");
-                layout.getChildren().add(cakeLabel);
-            }
-        } catch (IOException | InterruptedException e) { // Add InterruptedException here
+            cakeTable.getItems().addAll(cakes);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            // Just add a note that we couldn't load existing cakes
-            layout.getChildren().add(new Label("Could not load existing cakes."));
+            Alert alert = new Alert(Alert.AlertType.ERROR, "Could not load existing cakes.");
+            alert.show();
         }
 
+        // Add the table to a ScrollPane
+        ScrollPane scrollPane = new ScrollPane(cakeTable);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setFitToHeight(true);
+
+        layout.getChildren().addAll(new Label("Existing Cakes:"), scrollPane);
 
         // Add a back button
         addBackButton(layout, stage);
 
-        Scene manageCakesScene = new Scene(layout, 400, 400);
+        Scene manageCakesScene = new Scene(layout, 600, 400);
         stage.setScene(manageCakesScene);
     }
 
