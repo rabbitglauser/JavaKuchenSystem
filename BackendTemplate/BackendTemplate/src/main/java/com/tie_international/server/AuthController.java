@@ -1,4 +1,4 @@
-package com.tie_international.controller;
+package com.tie_international.server;
 
 import com.tie_international.DAOs.UserDAO;
 import com.tie_international.model.User;

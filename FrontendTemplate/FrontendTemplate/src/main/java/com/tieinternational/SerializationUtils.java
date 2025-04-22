@@ -1,4 +1,4 @@
-package com.tie_international.util;
+package com.tieinternational;
 
 import java.io.*;
 

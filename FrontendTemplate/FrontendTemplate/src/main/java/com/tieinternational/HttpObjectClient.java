@@ -1,8 +1,7 @@
-package com.tieinternational.client;
+package com.tieinternational;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.tieinternational.model.Cake;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -41,69 +40,13 @@ public class HttpObjectClient {
         this.httpClient = HttpClient.newHttpClient();
     }
 
-    public <T> T putObject(String path, Object requestObject, Class<T> responseType) throws IOException, InterruptedException {
-        return sendObjectWithHttpClient("PUT", path, requestObject, responseType);
-    }
-
-    public <T> T deleteObject(String path, Class<T> responseType) throws IOException, InterruptedException {
-        return sendObjectWithHttpClient("DELETE", path, null, responseType);
-    }
-
     public <T> T getObject(String path, Class<T> responseType) throws IOException, InterruptedException {
         return sendObjectWithHttpClient("GET", path, null, responseType);
     }
 
     public <T> T postObject(String path, Object requestObject, Class<T> responseType) throws IOException, InterruptedException {
-        if (responseType == Cake.class) {
-            return sendMessageResponseWithHttpClient("POST", path, requestObject, responseType);
-        } else {
-            return sendObjectWithHttpClient("POST", path, requestObject, responseType);
-        }
+        return sendObjectWithHttpClient("POST", path, requestObject, responseType);
     }
-
-    private <T> T sendMessageResponseWithHttpClient(String method, String endpoint, Object requestBody, Class<T> responseType)
-            throws IOException, InterruptedException {
-        HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
-                .uri(URI.create(baseUrl + endpoint))
-                .header("Content-Type", "application/json");
-
-        HttpRequest request;
-        if (requestBody != null) {
-            String requestBodyJson = objectMapper.writeValueAsString(requestBody);
-            request = requestBuilder
-                    .method(method, HttpRequest.BodyPublishers.ofString(requestBodyJson))
-                    .build();
-        } else {
-            request = requestBuilder
-                    .method(method, HttpRequest.BodyPublishers.noBody())
-                    .build();
-        }
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-
-        System.out.println("Response status: " + response.statusCode());
-        System.out.println("Response body: " + response.body());
-
-        if (response.statusCode() >= 400) {
-            try {
-                ErrorResponse errorResponse = objectMapper.readValue(response.body(), ErrorResponse.class);
-                throw new IOException("Server error: " + errorResponse.getMessage());
-            } catch (JsonProcessingException e) {
-                throw new IOException("Server error: " + response.body());
-            }
-        }
-
-        if (response.statusCode() == 200 || response.statusCode() == 201) {
-            if (response.body().isBlank()) {
-                // Return a default Cake object with id=-1 for successful empty responses
-                return responseType.cast(new Cake("", "", -1));
-            }
-        }
-
-        // Parse the response as the provided type
-        return objectMapper.readValue(response.body(), responseType);
-    }
-
 
     private <T> T sendObjectWithHttpClient(String method, String endpoint, Object requestBody, Class<T> responseType) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()

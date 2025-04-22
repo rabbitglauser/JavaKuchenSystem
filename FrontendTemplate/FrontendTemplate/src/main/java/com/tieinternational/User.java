@@ -1,4 +1,4 @@
-package com.tieinternational.model;
+package com.tieinternational;
 
 import java.io.Serializable;
 
