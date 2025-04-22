@@ -1,5 +1,6 @@
-package com.tieinternational;
+package com.tieinternational.app;
 
+import com.tieinternational.service.NavigationService;
 import javafx.application.Application;
 import javafx.stage.Stage;
 

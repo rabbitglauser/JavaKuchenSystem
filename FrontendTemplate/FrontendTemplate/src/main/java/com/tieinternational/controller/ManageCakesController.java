@@ -1,7 +1,9 @@
-package com.tieinternational;
+package com.tieinternational.controller;
 
+import com.tieinternational.model.Cake;
+import com.tieinternational.client.HttpObjectClient;
+import com.tieinternational.service.NavigationService;
 import javafx.beans.property.SimpleStringProperty;
-import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;

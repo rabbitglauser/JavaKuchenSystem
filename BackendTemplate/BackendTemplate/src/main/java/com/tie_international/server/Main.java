@@ -1,4 +1,4 @@
-package com.tie_international;
+package com.tie_international.server;
 
 import com.sun.net.httpserver.HttpServer;
 import com.tie_international.Handlers.RootHandler;

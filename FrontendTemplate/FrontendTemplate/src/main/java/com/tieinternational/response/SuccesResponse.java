@@ -1,4 +1,4 @@
-package com.tieinternational;
+package com.tieinternational.response;
 
 public class SuccesResponse {
 }

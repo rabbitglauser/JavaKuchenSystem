@@ -1,7 +1,8 @@
-package com.tieinternational;
+package com.tieinternational.client;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.tieinternational.model.Cake;
 
 import java.io.*;
 import java.net.HttpURLConnection;

@@ -1,5 +1,6 @@
-package com.tieinternational;
+package com.tieinternational.controller;
 
+import com.tieinternational.service.NavigationService;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;

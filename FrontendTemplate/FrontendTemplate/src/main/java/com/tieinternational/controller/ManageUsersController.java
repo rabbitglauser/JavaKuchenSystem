@@ -1,5 +1,8 @@
-package com.tieinternational;
+package com.tieinternational.controller;
 
+import com.tieinternational.client.HttpObjectClient;
+import com.tieinternational.service.NavigationService;
+import com.tieinternational.model.User;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.VBox;

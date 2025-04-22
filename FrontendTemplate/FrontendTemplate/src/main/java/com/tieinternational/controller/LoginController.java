@@ -1,5 +1,9 @@
-package com.tieinternational;
+package com.tieinternational.controller;
 
+import com.tieinternational.client.HttpObjectClient;
+import com.tieinternational.request.LoginRequest;
+import com.tieinternational.response.LoginResponse;
+import com.tieinternational.service.NavigationService;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.control.*;

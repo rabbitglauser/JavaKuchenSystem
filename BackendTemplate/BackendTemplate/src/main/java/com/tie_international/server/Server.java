@@ -4,8 +4,8 @@ import com.tie_international.DAOs.CakeDAO;
 import com.tie_international.DAOs.UserDAO;
 import com.tie_international.model.Cake;
 import com.tie_international.model.User;
-import com.tie_international.RequestUtils;
 
+import com.tie_international.util.RequestUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -336,7 +336,6 @@ public class Server {
         out.println("Content-Length: 0");
         out.println();
         out.flush();
-        // Don't close the writer here
     }
 
     private static String getStatusMessage(int statusCode) {

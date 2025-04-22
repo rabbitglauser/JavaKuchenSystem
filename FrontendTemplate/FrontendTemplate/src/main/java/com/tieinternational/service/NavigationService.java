@@ -1,5 +1,9 @@
-package com.tieinternational;
+package com.tieinternational.service;
 
+import com.tieinternational.controller.LoginController;
+import com.tieinternational.controller.DashboardController;
+import com.tieinternational.controller.ManageCakesController;
+import com.tieinternational.controller.ManageUsersController;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 

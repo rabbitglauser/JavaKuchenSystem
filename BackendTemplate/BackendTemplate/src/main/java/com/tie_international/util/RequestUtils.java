@@ -1,4 +1,4 @@
-package com.tie_international.server;
+package com.tie_international.util;
 
 import org.json.JSONException;
 import org.json.JSONObject;

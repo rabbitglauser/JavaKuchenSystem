@@ -50,7 +50,7 @@
                     <execution>
                         <id>default-cli</id>
                         <configuration>
-                            <mainClass>com.tieinternational.App</mainClass>
+                            <mainClass>com.tieinternational.app.App</mainClass>
                         </configuration>
                     </execution>
                 </executions>
