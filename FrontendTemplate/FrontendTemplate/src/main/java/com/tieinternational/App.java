@@ -7,6 +7,10 @@ import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+
 
 import java.io.IOException;
 
@@ -39,7 +43,6 @@ public class App extends Application {
             this.message = message;
         }
     }
-
 
     private void showLoginScene(Stage stage) {
         VBox loginLayout = new VBox(10);
@@ -206,7 +209,16 @@ public class App extends Application {
         layout.setPadding(new Insets(20));
 
         Label titleLabel = new Label("Manage Cakes");
+        titleLabel.setStyle("-fx-font-size: 16px; -fx-font-weight: bold;");
         layout.getChildren().add(titleLabel);
+
+        // Create form for adding new cakes
+        VBox formBox = new VBox(5);
+        formBox.setPadding(new Insets(10));
+        formBox.setStyle("-fx-border-color: #cccccc; -fx-border-radius: 5;");
+
+        Label formLabel = new Label("Add New Cake:");
+        formLabel.setStyle("-fx-font-weight: bold;");
 
         TextField cakeNameField = new TextField();
         cakeNameField.setPromptText("Cake Name");
@@ -279,7 +291,7 @@ public class App extends Application {
 
                     // Refresh the cake list
                     try {
-                        refreshCakeList(layout);
+                        refreshCakeTable(layout);
                     } catch (IOException ex) {
                         ex.printStackTrace();
                     }
@@ -303,70 +315,90 @@ public class App extends Application {
             }
         });
 
+        formBox.getChildren().addAll(formLabel, cakeNameField, cakeDescriptionField, cakeDurationField, createCakeButton);
+        layout.getChildren().add(formBox);
 
-        layout.getChildren().addAll(cakeNameField, cakeDescriptionField, cakeDurationField, createCakeButton);
+        // Separator between form and table
+        layout.getChildren().add(new Separator());
 
-        // List existing cakes
+        // Create TableView for existing cakes
+        Label existingCakesLabel = new Label("Existing Cakes:");
+        existingCakesLabel.setStyle("-fx-font-weight: bold;");
+        layout.getChildren().add(existingCakesLabel);
+
+        // Create table with appropriate columns
+        TableView<Cake> cakeTable = new TableView<>();
+
+        // Define columns
+        TableColumn<Cake, String> nameColumn = new TableColumn<>("Name");
+        nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+        nameColumn.setPrefWidth(100);
+
+        TableColumn<Cake, String> descColumn = new TableColumn<>("Description");
+        descColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescription()));
+        descColumn.setPrefWidth(200);
+
+        TableColumn<Cake, String> durationColumn = new TableColumn<>("Duration (mins)");
+        durationColumn.setCellValueFactory(data -> new SimpleStringProperty(
+                String.valueOf(data.getValue().getDurationInMinutes())));
+        durationColumn.setPrefWidth(100);
+
+        cakeTable.getColumns().addAll(nameColumn, descColumn, durationColumn);
+
+        // Set table properties
+        cakeTable.setPrefHeight(200);  // Set a height that allows scrolling
+        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Load data into the table
         try {
-            Label existingCakesLabel = new Label("Existing Cakes:");
-            layout.getChildren().add(existingCakesLabel);
-
             Cake[] cakes = client.getObject("/cakes", Cake[].class);
-
-            for (Cake cake : cakes) {
-                Label cakeLabel = new Label("- " + cake.getName() + ": " + cake.getDescription() + " (" + cake.getDurationInMinutes() + " mins)");
-                layout.getChildren().add(cakeLabel);
-            }
-        } catch (IOException | InterruptedException e) { // Add InterruptedException here
+            cakeTable.getItems().addAll(cakes);
+        } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            // Just add a note that we couldn't load existing cakes
             layout.getChildren().add(new Label("Could not load existing cakes."));
         }
 
+        // Add the table to the layout
+        layout.getChildren().add(cakeTable);
 
         // Add a back button
         addBackButton(layout, stage);
 
-        Scene manageCakesScene = new Scene(layout, 400, 400);
+        // Create a ScrollPane to make the entire layout scrollable if needed
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(layout);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPannable(true);
+
+        Scene manageCakesScene = new Scene(scrollPane, 450, 600);
         stage.setScene(manageCakesScene);
     }
 
-    private void refreshCakeList(VBox layout) throws IOException {
-        // Remove existing cake labels (skip the title, form fields, buttons)
-        int startIndex = layout.getChildren().size();
-        // Find where the cake list starts - it's after the "Existing Cakes:" label
+    // Modified refresh method to update the TableView
+    private void refreshCakeTable(VBox layout) throws IOException {
+        // Find the TableView in the layout
+        TableView<Cake> cakeTable = null;
         for (int i = 0; i < layout.getChildren().size(); i++) {
-            if (layout.getChildren().get(i) instanceof Label) {
-                Label label = (Label) layout.getChildren().get(i);
-                if ("Existing Cakes:".equals(label.getText())) {
-                    startIndex = i + 1;
-                    break;
-                }
+            if (layout.getChildren().get(i) instanceof TableView) {
+                cakeTable = (TableView<Cake>) layout.getChildren().get(i);
+                break;
             }
         }
 
-        // Remove all children from the startIndex up to the back button
-        while (startIndex < layout.getChildren().size() - 1) {
-            layout.getChildren().remove(startIndex);
-        }
+        if (cakeTable != null) {
+            // Clear existing items
+            cakeTable.getItems().clear();
 
-        // Reload cakes
-        try {
-            Cake[] cakes = client.getObject("/cakes", Cake[].class);
-
-            if (cakes.length == 0) {
-                layout.getChildren().add(startIndex, new Label("No cakes available."));
-            } else {
-                for (Cake cake : cakes) {
-                    Label cakeLabel = new Label("- " + cake.getName() + ": " +
-                            cake.getDescription() + " (" +
-                            cake.getDurationInMinutes() + " mins)");
-                    layout.getChildren().add(startIndex++, cakeLabel);
-                }
+            // Load fresh data
+            try {
+                Cake[] cakes = client.getObject("/cakes", Cake[].class);
+                cakeTable.getItems().addAll(cakes);
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                // We could show an error message here if needed
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Could not refresh cake list.");
+                alert.show();
             }
-        } catch (IOException | InterruptedException e) { // Add InterruptedException here
-            e.printStackTrace();
-            layout.getChildren().add(startIndex, new Label("Could not load existing cakes."));
         }
     }
 
