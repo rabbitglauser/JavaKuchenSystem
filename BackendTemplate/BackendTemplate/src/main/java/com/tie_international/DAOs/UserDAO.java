@@ -16,6 +16,21 @@ public class UserDAO {
         this.connection = DBConnection.getConnection();
     }
 
+    public void createUser(User user) throws SQLException {
+        // First check if the username already exists
+        User existingUser = getUserByUsername(user.getUsername());
+        if (existingUser != null) {
+            throw new SQLException("Username already exists");
+        }
+
+        String sql = "INSERT INTO users (username, password, role) VALUES (?, ?, ?)";
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            statement.setString(1, user.getUsername());
+            statement.setString(2, user.getPassword());
+            statement.setString(3, user.getRole());
+            statement.executeUpdate();
+        }
+    }
     public User getUserByUsername(String username) throws SQLException {
         System.out.println("Fetching user with username: " + username);
 

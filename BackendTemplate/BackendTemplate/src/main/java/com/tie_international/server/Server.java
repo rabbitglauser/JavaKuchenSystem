@@ -4,7 +4,7 @@ import com.tie_international.DAOs.CakeDAO;
 import com.tie_international.DAOs.UserDAO;
 import com.tie_international.model.Cake;
 import com.tie_international.RequestUtils;
-
+import com.tie_international.model.User;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -69,6 +69,43 @@ public class Server {
         }
     }
 
+    private static void handleCreateUser(PrintWriter out, UserDAO userDAO, String requestBody) {
+        try {
+            // Deserialize the user from JSON
+            User newUser = deserializeUserFromJson(requestBody);
+
+            // Check if username already exists
+            User existingUser = userDAO.getUserByUsername(newUser.getUsername());
+            if (existingUser != null) {
+                sendJsonResponse(out, 400, "{\"status\":\"error\",\"message\":\"Username already exists. Please choose a different username.\"}");
+                return;
+            }
+
+            // Add the user to the database
+            userDAO.createUser(newUser);
+
+            // Send success response
+            sendJsonResponse(out, 201, "{\"message\":\"User created successfully.\"}");
+        } catch (IllegalArgumentException e) {
+            sendBadRequestResponse(out, e.getMessage());
+        } catch (SQLException e) {
+            sendErrorResponse(out, 500, "Failed to create user: " + e.getMessage());
+        }
+    }
+
+
+    private static User deserializeUserFromJson(String json) {
+        try {
+            JSONObject jsonObject = new JSONObject(json);
+            String username = jsonObject.getString("username");
+            String password = jsonObject.getString("password");
+            String role = jsonObject.getString("role");
+            return new User(0, username, password, role); // The ID will be set by the database
+        } catch (JSONException e) {
+            throw new IllegalArgumentException("Invalid JSON format for User", e);
+        }
+    }
+
     private static void routeRequest(String method, String path, BufferedReader in, PrintWriter out, CakeDAO cakeDAO, UserDAO userDAO) throws IOException, SQLException {
         // Don't add CORS headers here - they're added in the response methods
 
@@ -92,7 +129,13 @@ public class Server {
             if (requestBody != null) {
                 handleLogin(out, userDAO, requestBody);
             }
+        } else if ("POST".equalsIgnoreCase(method) && "/users".equals(path)) {
+            String requestBody = processRequestBody(in, out);
+            if (requestBody != null) {
+                handleCreateUser(out, userDAO, requestBody);
+            }
         } else if ("OPTIONS".equalsIgnoreCase(method)) {
+
             sendOptionsResponse(out);
         } else {
             sendNotFoundResponse(out);

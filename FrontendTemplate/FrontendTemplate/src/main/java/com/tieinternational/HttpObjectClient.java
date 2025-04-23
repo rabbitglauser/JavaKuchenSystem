@@ -2,6 +2,7 @@ package com.tieinternational;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -34,9 +35,36 @@ public class HttpObjectClient {
         }
     }
 
+    public class ApiResponse {
+        private String message;
+        private String status;
+
+        // Default constructor needed for Jackson
+        public ApiResponse() {
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+
+        public String getStatus() {
+            return status;
+        }
+
+        public void setStatus(String status) {
+            this.status = status;
+        }
+    }
+
     public HttpObjectClient(String baseUrl) {
         this.baseUrl = baseUrl;
         this.objectMapper = new ObjectMapper();
+        // Configure ObjectMapper to ignore unknown properties
+        this.objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         this.httpClient = HttpClient.newHttpClient();
     }
 
@@ -91,8 +119,30 @@ public class HttpObjectClient {
             }
         }
 
-        // For success responses, parse as expected type
-        return objectMapper.readValue(response.body(), responseType);
+        // For success responses, check if it's a message response or expected object
+        String responseBody = response.body();
+
+        // If we're expecting an object but got a message response
+        if (responseBody.contains("\"message\":") && !responseType.equals(ApiResponse.class)) {
+            try {
+                // Try to parse as ApiResponse
+                ApiResponse apiResponse = objectMapper.readValue(responseBody, ApiResponse.class);
+
+                // Create an instance of the expected type if possible (will only work for types with default constructor)
+                try {
+                    T instance = responseType.getDeclaredConstructor().newInstance();
+                    return instance;
+                } catch (Exception e) {
+                    // If we can't create an instance, just return null
+                    return null;
+                }
+            } catch (JsonProcessingException e) {
+                // If can't parse as ApiResponse, continue with normal deserialization
+            }
+        }
+
+        // For regular responses, parse as expected type
+        return objectMapper.readValue(responseBody, responseType);
     }
 
     private <T> T sendObjectWithURLConnection(String method, String path, Object requestObject, Class<T> responseType) throws IOException {

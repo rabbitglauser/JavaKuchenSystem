@@ -629,29 +629,54 @@ public class App extends Application {
         layout.setPadding(new Insets(20));
 
         Label titleLabel = new Label("Available Cakes");
-        layout.getChildren().add(titleLabel);  // Add title first
+        titleLabel.setStyle("-fx-font-weight: bold; -fx-font-size: 16px;");
+        layout.getChildren().add(titleLabel);
 
+        // Create TableView for existing cakes
+        TableView<Cake> cakeTable = new TableView<>();
+
+        // Define columns
+        TableColumn<Cake, String> nameColumn = new TableColumn<>("Name");
+        nameColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getName()));
+        nameColumn.setPrefWidth(100);
+
+        TableColumn<Cake, String> descColumn = new TableColumn<>("Description");
+        descColumn.setCellValueFactory(data -> new SimpleStringProperty(data.getValue().getDescription()));
+        descColumn.setPrefWidth(200);
+
+        TableColumn<Cake, String> durationColumn = new TableColumn<>("Duration (mins)");
+        durationColumn.setCellValueFactory(data -> new SimpleStringProperty(
+                String.valueOf(data.getValue().getDurationInMinutes())));
+        durationColumn.setPrefWidth(100);
+
+        cakeTable.getColumns().addAll(nameColumn, descColumn, durationColumn);
+
+        // Set table properties
+        cakeTable.setPrefHeight(200);  // Set a height that allows scrolling
+        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Load data into the table
         try {
             Cake[] cakes = client.getObject("/cakes", Cake[].class);
-            if (cakes.length == 0) {
-                layout.getChildren().add(new Label("No cakes available."));
-            } else {
-                for (Cake cake : cakes) {
-                    Label cakeLabel = new Label("- " + cake.getName() + ": " + cake.getDescription() + " (" + cake.getDurationInMinutes() + " mins)");
-                    layout.getChildren().add(cakeLabel);
-                }
-            }
+            cakeTable.getItems().addAll(cakes);
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
-            Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to fetch cakes.");
-            alert.show();
+            layout.getChildren().add(new Label("Could not load existing cakes."));
         }
 
+        // Add the table to the layout
+        layout.getChildren().add(cakeTable);
 
         // Add a back button
         addBackButton(layout, stage);
 
-        Scene viewCakesScene = new Scene(layout, 400, 300);
+        // Create a ScrollPane to make the entire layout scrollable if needed
+        ScrollPane scrollPane = new ScrollPane();
+        scrollPane.setContent(layout);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPannable(true);
+
+        Scene viewCakesScene = new Scene(scrollPane, 600, 600);
         stage.setScene(viewCakesScene);
     }
 
