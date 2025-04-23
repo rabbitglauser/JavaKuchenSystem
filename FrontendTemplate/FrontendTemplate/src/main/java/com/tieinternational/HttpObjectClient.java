@@ -48,6 +48,14 @@ public class HttpObjectClient {
         return sendObjectWithHttpClient("POST", path, requestObject, responseType);
     }
 
+    public <T> T putObject(String path, Object requestObject, Class<T> responseType) throws IOException, InterruptedException {
+        return sendObjectWithHttpClient("PUT", path, requestObject, responseType);
+    }
+
+    public <T> T deleteObject(String path, Class<T> responseType) throws IOException, InterruptedException {
+        return sendObjectWithHttpClient("DELETE", path, null, responseType);
+    }
+
     private <T> T sendObjectWithHttpClient(String method, String endpoint, Object requestBody, Class<T> responseType) throws IOException, InterruptedException {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(URI.create(baseUrl + endpoint))

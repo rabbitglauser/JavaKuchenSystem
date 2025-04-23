@@ -9,7 +9,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.io.*;
-import java.net.InetAddress; // Add this import
+import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
@@ -81,6 +81,12 @@ public class Server {
             }
         } else if ("DELETE".equalsIgnoreCase(method) && path.startsWith("/cakes/")) {
             handleDeleteCake(out, cakeDAO, path);
+        } else if ("PUT".equalsIgnoreCase(method) && path.startsWith("/cakes/")) {
+            System.out.println("PUT handler reached for path: " + path);
+            String requestBody = processRequestBody(in, out);
+            if (requestBody != null) {
+                handleUpdateCake(out, cakeDAO, path, requestBody);
+            }
         } else if ("POST".equalsIgnoreCase(method) && "/login".equals(path)) {
             String requestBody = processRequestBody(in, out);
             if (requestBody != null) {
@@ -90,6 +96,30 @@ public class Server {
             sendOptionsResponse(out);
         } else {
             sendNotFoundResponse(out);
+        }
+    }
+
+    private static void handleUpdateCake(PrintWriter out, CakeDAO cakeDAO, String path, String requestBody) {
+        try {
+            // Extract cake ID from the path
+            String[] pathParts = path.split("/");
+            int cakeId = Integer.parseInt(pathParts[2]);
+
+            // Deserialize the cake from JSON
+            Cake cake = deserializeCakeFromJson(requestBody);
+            cake.setId(cakeId); // Make sure the ID from the path is used
+
+            // Update the cake in the database
+            cakeDAO.update(cake);
+
+            // Send success response
+            sendJsonResponse(out, 200, "{\"message\":\"Cake updated successfully.\"}");
+        } catch (NumberFormatException e) {
+            sendBadRequestResponse(out, "Invalid cake ID format");
+        } catch (IllegalArgumentException e) {
+            sendBadRequestResponse(out, e.getMessage());
+        } catch (SQLException e) {
+            sendErrorResponse(out, 500, "Failed to update cake: " + e.getMessage());
         }
     }
 
