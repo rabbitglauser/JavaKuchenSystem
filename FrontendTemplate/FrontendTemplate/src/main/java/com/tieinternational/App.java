@@ -207,6 +207,84 @@ public class App extends Application {
         stage.setScene(dashboardScene);
     }
 
+    // Add this method to create a search panel
+    private HBox createSearchPanel(TableView<Cake> tableView) {
+        HBox searchBox = new HBox(10);
+        searchBox.setPadding(new Insets(5));
+        searchBox.setAlignment(javafx.geometry.Pos.CENTER_LEFT);
+
+        Label searchLabel = new Label("Search:");
+        TextField searchField = new TextField();
+        searchField.setPromptText("Enter name, description or duration");
+        searchField.setPrefWidth(250);
+
+        ComboBox<String> searchTypeCombo = new ComboBox<>();
+        searchTypeCombo.getItems().addAll("All", "Name", "Description", "Duration");
+        searchTypeCombo.setValue("All");
+
+        Button searchButton = new Button("Search");
+        Button clearButton = new Button("Clear");
+
+        searchBox.getChildren().addAll(searchLabel, searchField, searchTypeCombo, searchButton, clearButton);
+
+        // Add search functionality
+        searchButton.setOnAction(event -> {
+            String searchTerm = searchField.getText().toLowerCase().trim();
+            String searchType = searchTypeCombo.getValue();
+
+            if (searchTerm.isEmpty()) {
+                refreshTableView(tableView);
+                return;
+            }
+
+            // Get all cakes and filter them
+            try {
+                Cake[] allCakes = client.getObject("/cakes", Cake[].class);
+                tableView.getItems().clear();
+
+                for (Cake cake : allCakes) {
+                    boolean matches = false;
+
+                    if (searchType.equals("All") || searchType.equals("Name")) {
+                        if (cake.getName().toLowerCase().contains(searchTerm)) {
+                            matches = true;
+                        }
+                    }
+
+                    if ((searchType.equals("All") || searchType.equals("Description")) && !matches) {
+                        if (cake.getDescription().toLowerCase().contains(searchTerm)) {
+                            matches = true;
+                        }
+                    }
+
+                    if ((searchType.equals("All") || searchType.equals("Duration")) && !matches) {
+                        String durationStr = String.valueOf(cake.getDurationInMinutes());
+                        if (durationStr.contains(searchTerm)) {
+                            matches = true;
+                        }
+                    }
+
+                    if (matches) {
+                        tableView.getItems().add(cake);
+                    }
+                }
+
+            } catch (IOException | InterruptedException e) {
+                e.printStackTrace();
+                Alert alert = new Alert(Alert.AlertType.ERROR, "Failed to search cakes: " + e.getMessage());
+                alert.show();
+            }
+        });
+
+        // Clear search and show all cakes
+        clearButton.setOnAction(event -> {
+            searchField.clear();
+            refreshTableView(tableView);
+        });
+
+        return searchBox;
+    }
+
     private void showManageCakesScene(Stage stage) {
         VBox layout = new VBox(10);
         layout.setPadding(new Insets(20));
@@ -381,9 +459,11 @@ public class App extends Application {
 
         cakeTable.getColumns().addAll(nameColumn, descColumn, durationColumn, actionColumn);
 
-        // Set table properties
-        cakeTable.setPrefHeight(200);  // Set a height that allows scrolling
-        cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+        // After creating the cakeTable and before adding it to the layout:
+
+        // Add the search panel
+        HBox searchPanel = createSearchPanel(cakeTable);
+        layout.getChildren().add(searchPanel);
 
         // Load data into the table
         try {
@@ -654,6 +734,10 @@ public class App extends Application {
         // Set table properties
         cakeTable.setPrefHeight(200);  // Set a height that allows scrolling
         cakeTable.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY);
+
+        // Add the search panel
+        HBox searchPanel = createSearchPanel(cakeTable);
+        layout.getChildren().add(searchPanel);
 
         // Load data into the table
         try {

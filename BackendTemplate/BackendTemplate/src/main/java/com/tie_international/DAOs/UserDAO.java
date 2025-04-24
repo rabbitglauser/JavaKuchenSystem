@@ -51,6 +51,6 @@ public class UserDAO {
                 System.out.println("No user found with username: " + username);
             }
         }
-        return null; // User not found
+        return null;
     }
 }
